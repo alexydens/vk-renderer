@@ -1,5 +1,4 @@
 /* Implements vkinst.h */
-#include <time.h>
 #include <vkinst.h>
 
 /* Add another requested extension */
@@ -248,6 +247,7 @@ void vkinst_destroy(vkinst_t *instance) {
   instance->num_extensions = 0;
   if (instance->layers) free(instance->layers);
   instance->num_layers = 0;
+  instance->instance = VK_NULL_HANDLE;
 
   /* Print message */
   printf("INFO: Successfully destroyed vulkan instance\n");

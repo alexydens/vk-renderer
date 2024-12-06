@@ -9,6 +9,7 @@
 #include <stdio.h>            /* Terminal I/O */
 /* Project includes */
 #include <vkinst.h>
+#include <vkmessenger.h>
 
 /* Window state */
 struct {
@@ -43,8 +44,12 @@ int main(void) {
 
   /* Create vulkan objects */
   vkinst_t vkinst;
+  vkmessenger_t vkmessenger;
   vkinst_init(&vkinst);
+  vkinst_add_extension(&vkinst, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+  vkinst_add_layer(&vkinst, "VK_LAYER_KHRONOS_validation");
   vkinst_create(&vkinst, window_state.window);
+  vkmessenger_create(&vkmessenger, vkinst.instance);
 
   /* Main loop */
   window_state.running = true;
@@ -58,6 +63,7 @@ int main(void) {
   }
 
   /* Destroy vulkan objects */
+  vkmessenger_destroy(&vkmessenger, vkinst.instance);
   vkinst_destroy(&vkinst);
 
   /* Destroy window */
