@@ -1,12 +1,14 @@
 /* Includes */
-#include <SDL2/SDL.h>   /* Windowing */
-#include <SDL2/SDL_video.h>
-#include <stdint.h>     /* Integer types */
-#include <stddef.h>     /* Definitions */
-#include <stdbool.h>    /* Booleans */
-#include <stdlib.h>     /* Memory */
-#include <string.h>     /* Strings */
-#include <stdio.h>      /* Terminal I/O */
+#include <SDL2/SDL.h>         /* Windowing */
+#include <SDL2/SDL_vulkan.h>  /* Sdl2 vulkan */
+#include <stdint.h>           /* Integer types */
+#include <stddef.h>           /* Definitions */
+#include <stdbool.h>          /* Booleans */
+#include <stdlib.h>           /* Memory */
+#include <string.h>           /* Strings */
+#include <stdio.h>            /* Terminal I/O */
+/* Project includes */
+#include <vkinst.h>
 
 /* Window state */
 struct {
@@ -17,8 +19,6 @@ struct {
 
 /* Entry point */
 int main(void) {
-  /* Ensure X11 */
-  SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
   /* Initialize SDL2 */
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
@@ -41,6 +41,11 @@ int main(void) {
     return 1;
   }
 
+  /* Create vulkan objects */
+  vkinst_t vkinst;
+  vkinst_init(&vkinst);
+  vkinst_create(&vkinst, window_state.window);
+
   /* Main loop */
   window_state.running = true;
   while (window_state.running) {
@@ -51,6 +56,9 @@ int main(void) {
       }
     }
   }
+
+  /* Destroy vulkan objects */
+  vkinst_destroy(&vkinst);
 
   /* Destroy window */
   SDL_DestroyWindow(window_state.window);

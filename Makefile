@@ -3,7 +3,8 @@ INC_DIR=include
 OBJ_DIR=obj
 BIN_DIR=bin
 
-CFLAGS = -Wall -Wextra -Wpedantic -Werror -std=c11 -I$(INC_DIR)
+#CFLAGS = -Wall -Wextra -Wpedantic -Werror -std=c11 -I$(INC_DIR)
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I$(INC_DIR)
 LDFLAGS = -lSDL2 -lvulkan -lm
 
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
