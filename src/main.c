@@ -10,6 +10,8 @@
 /* Project includes */
 #include <vkinst.h>
 #include <vkmessenger.h>
+#include <vksurface.h>
+#include <vkphysdev.h>
 
 /* Window state */
 struct {
@@ -45,11 +47,15 @@ int main(void) {
   /* Create vulkan objects */
   vkinst_t vkinst;
   vkmessenger_t vkmessenger;
+  vksurface_t vksurface;
+  vkphysdev_t vkphysdev;
   vkinst_init(&vkinst);
   vkinst_add_extension(&vkinst, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   vkinst_add_layer(&vkinst, "VK_LAYER_KHRONOS_validation");
   vkinst_create(&vkinst, window_state.window);
   vkmessenger_create(&vkmessenger, vkinst.instance);
+  vksurface_create(&vksurface, &vkinst, window_state.window);
+  vkphysdev_pick(&vkphysdev, &vkinst, &vksurface);
 
   /* Main loop */
   window_state.running = true;
@@ -63,6 +69,7 @@ int main(void) {
   }
 
   /* Destroy vulkan objects */
+  vksurface_destroy(&vksurface, &vkinst);
   vkmessenger_destroy(&vkmessenger, vkinst.instance);
   vkinst_destroy(&vkinst);
 
