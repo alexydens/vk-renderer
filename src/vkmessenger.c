@@ -41,7 +41,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
   }
   fprintf(
       stderr,
-      "VALIDATION: %s: %s: %s\n",
+      "VALIDATION: (%s,%s): %s\n",
       severity,
       type,
       pCallbackData->pMessage

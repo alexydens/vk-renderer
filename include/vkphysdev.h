@@ -24,7 +24,6 @@ typedef struct {
   VkPhysicalDeviceFeatures features;
   uint32_t graphics_queue_index;
   uint32_t present_queue_index;
-  uint32_t compute_queue_index;
 } vkphysdev_t;
 
 /* Pick a physical devices */

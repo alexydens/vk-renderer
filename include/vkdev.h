@@ -26,7 +26,6 @@ typedef struct {
   uint32_t num_layers;
   VkQueue graphics_queue;
   VkQueue present_queue;
-  VkQueue compute_queue;
 } vkdev_t;
 
 /* Add another requested extension */
@@ -45,10 +44,9 @@ extern void vkdev_init(vkdev_t *device);
 /* Create a vulkan device */
 extern void vkdev_create(
     vkdev_t *device,
-    vkinst_t *instance,
     vkphysdev_t *physical_device
 );
 /* Destroy a vulkan device */
-extern void vkdev_destroy(vkdev_t *device, vkinst_t *instance);
+extern void vkdev_destroy(vkdev_t *device);
 
 #endif /* VKDEV_H */

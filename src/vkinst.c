@@ -161,7 +161,7 @@ void vkinst_create(vkinst_t *instance, SDL_Window *window) {
       );
       exit(1);
     }
-    printf("INFO: Extension %s supported and used\n", instance->extensions[i]);
+    printf("INFO: Instance extension %s supported and used\n", instance->extensions[i]);
   }
 
   /* Get the layers vulkan supports */
@@ -205,7 +205,7 @@ void vkinst_create(vkinst_t *instance, SDL_Window *window) {
       );
       exit(1);
     }
-    printf("INFO: Layer %s supported and used\n", instance->layers[i]);
+    printf("INFO: Instance layer %s supported and used\n", instance->layers[i]);
   }
 
   /* Populate the application info */

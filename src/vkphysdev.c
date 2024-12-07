@@ -132,15 +132,10 @@ void vkphysdev_pick(
   );
   bool found_graphics = false;
   bool found_present = false;
-  bool found_compute = false;
   for (uint32_t i = 0; i < queue_family_count; i++) {
     if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       physical_device->graphics_queue_index = i;
       found_graphics = true;
-    }
-    if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-      physical_device->compute_queue_index = i;
-      found_compute = true;
     }
     VkBool32 present_support = VK_FALSE;
     vkGetPhysicalDeviceSurfaceSupportKHR(
@@ -155,7 +150,7 @@ void vkphysdev_pick(
     }
   }
   free(queue_families);
-  if (!found_graphics || !found_present || !found_compute) {
+  if (!found_graphics || !found_present) {
     fprintf(
         stderr,
         "ERROR: No suitable queue families found\n"
