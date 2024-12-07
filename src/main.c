@@ -17,7 +17,6 @@
 /* Window state */
 struct {
   SDL_Window *window;
-  uint32_t width, height;
   bool running;
 } window_state;
 
@@ -40,7 +39,7 @@ int main(void) {
       SDL_WINDOW_VULKAN
       | SDL_WINDOW_SHOWN
       | SDL_WINDOW_ALLOW_HIGHDPI
-      /*| SDL_WINDOW_RESIZABLE*/
+      | SDL_WINDOW_RESIZABLE
   );
   if (window_state.window == NULL) {
     fprintf(stderr, "Failed to create window: %s\n", SDL_GetError());
@@ -72,6 +71,16 @@ int main(void) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT) {
         window_state.running = false;
+      }
+      if (event.type == SDL_WINDOWEVENT) {
+        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+          window_state.running = false;
+        }
+        if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+          uint32_t width = event.window.data1;
+          uint32_t height = event.window.data2;
+          printf("INFO: Window resized to %dx%d\n", width, height);
+        }
       }
     }
   }

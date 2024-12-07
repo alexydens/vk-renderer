@@ -1,6 +1,7 @@
 /* Implements vkphysdev.h */
 #include <time.h>
 #include <vkphysdev.h>
+#include <vulkan/vulkan_core.h>
 
 /* Score a device */
 static inline uint32_t vkphysdev_score(
@@ -106,6 +107,61 @@ void vkphysdev_pick(
   vkGetPhysicalDeviceFeatures(
       physical_device->physical_device,
       &physical_device->features
+  );
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+      physical_device->physical_device,
+      surface->surface,
+      &physical_device->surf_capabilities
+  );
+
+  /* Get surface formats */
+  vkGetPhysicalDeviceSurfaceFormatsKHR(
+      physical_device->physical_device,
+      surface->surface,
+      &physical_device->surf_formats_count,
+      NULL
+  );
+  physical_device->surf_formats = malloc(
+      physical_device->surf_formats_count * sizeof(VkSurfaceFormatKHR)
+  );
+  if (!physical_device->surf_formats) {
+    fprintf(
+        stderr,
+        "ERROR: malloc() failed: %s\n",
+        strerror(errno)
+    );
+    exit(1);
+  }
+  vkGetPhysicalDeviceSurfaceFormatsKHR(
+      physical_device->physical_device,
+      surface->surface,
+      &physical_device->surf_formats_count,
+      physical_device->surf_formats
+  );
+
+  /* Get present modes */
+  vkGetPhysicalDeviceSurfacePresentModesKHR(
+      physical_device->physical_device,
+      surface->surface,
+      &physical_device->present_modes_count,
+      NULL
+  );
+  physical_device->present_modes = malloc(
+      physical_device->present_modes_count * sizeof(VkPresentModeKHR)
+  );
+  if (!physical_device->present_modes) {
+    fprintf(
+        stderr,
+        "ERROR: malloc() failed: %s\n",
+        strerror(errno)
+    );
+    exit(1);
+  }
+  vkGetPhysicalDeviceSurfacePresentModesKHR(
+      physical_device->physical_device,
+      surface->surface,
+      &physical_device->present_modes_count,
+      physical_device->present_modes
   );
 
   /* Get queue families */
