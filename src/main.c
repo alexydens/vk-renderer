@@ -9,6 +9,7 @@
 #include <stdio.h>            /* Terminal I/O */
 /* Project includes */
 #include <base.h>
+#include <vk_inst.h>
 
 /* Window state */
 struct {
@@ -44,6 +45,31 @@ int main(void) {
   }
   log_msg(LOG_LEVEL_SUCCESS, "Created window");
 
+  /* Get required extensions */
+  const char **extensions_required = NULL;
+  uint32_t num_extensions_required = 0;
+  SDL_Vulkan_GetInstanceExtensions(
+      window_state.window,
+      &num_extensions_required,
+      NULL
+  );
+  if (num_extensions_required > 0) {
+    extensions_required = malloc(sizeof(char *) * num_extensions_required);
+    SDL_Vulkan_GetInstanceExtensions(
+        window_state.window,
+        &num_extensions_required,
+        extensions_required
+    );
+  }
+
+  /* Create vulkan objects */
+  vk_inst_t vk_inst;
+  vk_inst_init(&vk_inst);
+  for (uint32_t i = 0; i < num_extensions_required; i++) {
+    vk_inst_add_extension(&vk_inst, extensions_required[i]);
+  }
+  vk_inst_create(&vk_inst, NULL);
+
   /* Main loop */
   window_state.running = true;
   while (window_state.running) {
@@ -65,6 +91,11 @@ int main(void) {
     }
   }
 
+  /* Destroy vulkan objects */
+  vk_inst_destroy(&vk_inst);
+
+  /* Other cleanup */
+  if (extensions_required != NULL) free(extensions_required);
   /* Destroy window */
   SDL_DestroyWindow(window_state.window);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed window");
