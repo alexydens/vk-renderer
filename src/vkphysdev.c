@@ -49,6 +49,10 @@ void vkphysdev_pick(
   uint32_t max_index = 0;
   VkQueueFamilyProperties *queue_families;
   uint32_t queue_family_count;
+  VkSurfaceFormatKHR *surf_formats;
+  uint32_t surf_formats_count;
+  VkPresentModeKHR *present_modes;
+  uint32_t present_modes_count;
 
   /* Get all physical devices */
   vkEnumeratePhysicalDevices(
@@ -118,13 +122,13 @@ void vkphysdev_pick(
   vkGetPhysicalDeviceSurfaceFormatsKHR(
       physical_device->physical_device,
       surface->surface,
-      &physical_device->surf_formats_count,
+      &surf_formats_count,
       NULL
   );
-  physical_device->surf_formats = malloc(
-      physical_device->surf_formats_count * sizeof(VkSurfaceFormatKHR)
+  surf_formats = malloc(
+      surf_formats_count * sizeof(VkSurfaceFormatKHR)
   );
-  if (!physical_device->surf_formats) {
+  if (!surf_formats) {
     fprintf(
         stderr,
         "ERROR: malloc() failed: %s\n",
@@ -135,21 +139,40 @@ void vkphysdev_pick(
   vkGetPhysicalDeviceSurfaceFormatsKHR(
       physical_device->physical_device,
       surface->surface,
-      &physical_device->surf_formats_count,
-      physical_device->surf_formats
+      &surf_formats_count,
+      surf_formats
   );
+
+  /* Choose surface format */
+  physical_device->surf_format.format = VK_FORMAT_UNDEFINED;
+  for (uint32_t i = 0; i < surf_formats_count; i++) {
+    if (
+        surf_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
+        surf_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+    ) {
+      physical_device->surf_format = surf_formats[i];
+      break;
+    }
+  }
+  if (physical_device->surf_format.format == VK_FORMAT_UNDEFINED) {
+    fprintf(
+        stderr,
+        "ERROR: No suitable surface format found\n"
+    );
+    exit(1);
+  }
 
   /* Get present modes */
   vkGetPhysicalDeviceSurfacePresentModesKHR(
       physical_device->physical_device,
       surface->surface,
-      &physical_device->present_modes_count,
+      &present_modes_count,
       NULL
   );
-  physical_device->present_modes = malloc(
-      physical_device->present_modes_count * sizeof(VkPresentModeKHR)
+  present_modes = malloc(
+      present_modes_count * sizeof(VkPresentModeKHR)
   );
-  if (!physical_device->present_modes) {
+  if (!present_modes) {
     fprintf(
         stderr,
         "ERROR: malloc() failed: %s\n",
@@ -160,9 +183,18 @@ void vkphysdev_pick(
   vkGetPhysicalDeviceSurfacePresentModesKHR(
       physical_device->physical_device,
       surface->surface,
-      &physical_device->present_modes_count,
-      physical_device->present_modes
+      &present_modes_count,
+      present_modes
   );
+
+  /* Choose present mode */
+  physical_device->present_mode = VK_PRESENT_MODE_FIFO_KHR;
+  /*for (uint32_t i = 0; i < present_modes_count; i++) {
+    if (present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+      physical_device->present_mode = present_modes[i];
+      break;
+    }
+  }*/
 
   /* Get queue families */
   vkGetPhysicalDeviceQueueFamilyProperties(

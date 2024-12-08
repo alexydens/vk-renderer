@@ -23,10 +23,8 @@ typedef struct {
   VkPhysicalDeviceMemoryProperties memory_properties;
   VkPhysicalDeviceFeatures features;
   VkSurfaceCapabilitiesKHR surf_capabilities;
-  VkSurfaceFormatKHR *surf_formats;
-  uint32_t surf_formats_count;
-  VkPresentModeKHR *present_modes;
-  uint32_t present_modes_count;
+  VkSurfaceFormatKHR surf_format;
+  VkPresentModeKHR present_mode;
   uint32_t graphics_queue_index;
   uint32_t present_queue_index;
 } vkphysdev_t;
