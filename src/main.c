@@ -22,9 +22,10 @@ int main(void) {
   SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
   /* Initialize SDL2 */
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
+    log_msg(LOG_LEVEL_ERROR, "Failed to initialize SDL: %s", SDL_GetError());
     return 1;
   }
+  log_msg(LOG_LEVEL_SUCCESS, "Intialized SDL");
   /* Create window */
   window_state.window = SDL_CreateWindow(
       "VK Renderer",
@@ -38,9 +39,10 @@ int main(void) {
       | SDL_WINDOW_RESIZABLE
   );
   if (window_state.window == NULL) {
-    fprintf(stderr, "Failed to create window: %s\n", SDL_GetError());
+    log_msg(LOG_LEVEL_ERROR, "Failed to create window: %s", SDL_GetError());
     return 1;
   }
+  log_msg(LOG_LEVEL_SUCCESS, "Created window");
 
   /* Main loop */
   window_state.running = true;
@@ -57,7 +59,7 @@ int main(void) {
         if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
           uint32_t width = event.window.data1;
           uint32_t height = event.window.data2;
-          printf("INFO: Window resized to %dx%d\n", width, height);
+          log_msg(LOG_LEVEL_INFO, "Window resized to %dx%d", width, height);
         }
       }
     }
@@ -65,7 +67,9 @@ int main(void) {
 
   /* Destroy window */
   SDL_DestroyWindow(window_state.window);
+  log_msg(LOG_LEVEL_SUCCESS, "Destroyed window");
   /* Quit SDL2 */
   SDL_Quit();
+  log_msg(LOG_LEVEL_SUCCESS, "Quit SDL");
   return 0;
 }
