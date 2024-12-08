@@ -8,11 +8,7 @@
 #include <string.h>           /* Strings */
 #include <stdio.h>            /* Terminal I/O */
 /* Project includes */
-#include <vkinst.h>
-#include <vkmessenger.h>
-#include <vksurface.h>
-#include <vkphysdev.h>
-#include <vkdev.h>
+#include <base.h>
 
 /* Window state */
 struct {
@@ -46,24 +42,6 @@ int main(void) {
     return 1;
   }
 
-  /* Create vulkan objects */
-  vkinst_t vkinst;
-  vkmessenger_t vkmessenger;
-  vksurface_t vksurface;
-  vkphysdev_t vkphysdev;
-  vkdev_t vkdev;
-  vkinst_init(&vkinst);
-  vkinst_add_extension(&vkinst, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-  vkinst_add_layer(&vkinst, "VK_LAYER_KHRONOS_validation");
-  vkinst_create(&vkinst, window_state.window);
-  vkmessenger_create(&vkmessenger, vkinst.instance);
-  vksurface_create(&vksurface, &vkinst, window_state.window);
-  vkphysdev_pick(&vkphysdev, &vkinst, &vksurface);
-  vkdev_init(&vkdev);
-  vkdev_add_extension(&vkdev, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-  vkdev_add_layer(&vkdev, "VK_LAYER_KHRONOS_validation");
-  vkdev_create(&vkdev, &vkphysdev);
-
   /* Main loop */
   window_state.running = true;
   while (window_state.running) {
@@ -84,12 +62,6 @@ int main(void) {
       }
     }
   }
-
-  /* Destroy vulkan objects */
-  vkdev_destroy(&vkdev);
-  vksurface_destroy(&vksurface, &vkinst);
-  vkmessenger_destroy(&vkmessenger, vkinst.instance);
-  vkinst_destroy(&vkinst);
 
   /* Destroy window */
   SDL_DestroyWindow(window_state.window);
