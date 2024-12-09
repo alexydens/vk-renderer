@@ -2,6 +2,56 @@
 #include <vk_inst.h>
 #include <vulkan/vulkan_core.h>
 
+/* Callback */
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+  const char *severity;
+  const char *type;
+  switch (messageSeverity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+      severity = "\033[1;37mVERBOSE\033[0m";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+      severity = "\033[1;37mINFO\033[0m";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+      severity = "\033[1;33mWARNING\033[0m";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+      severity = "\033[1;31mERROR\033[0m";
+      break;
+    default:
+      severity = "UNKNOWN";
+  }
+  switch (messageType) {
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+      type = "VALIDATION";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+      type = "PERFORMANCE";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT:
+      type = "DEVICE_ADDRESS_BINDING";
+      break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+      type = "GENERAL";
+      break;
+  }
+  fprintf(
+      stderr,
+      "[VALIDATION] (%s,%s): %s\n",
+      severity,
+      type,
+      pCallbackData->pMessage
+  );
+  (void)pUserData;
+  (void)pCallbackData;
+  return VK_FALSE;
+}
+
 /* Initialize vulkan instance struct */
 void vk_inst_init(vk_inst_t *vk_inst) {
   vk_inst->instance = VK_NULL_HANDLE;
@@ -9,6 +59,8 @@ void vk_inst_init(vk_inst_t *vk_inst) {
   vk_inst->num_extensions = 0;
   vk_inst->layers = NULL;
   vk_inst->num_layers = 0;
+  vk_inst->debug_messenger = VK_NULL_HANDLE;
+  vk_inst->use_messenger = false;
 }
 /* Add requested extension */
 void vk_inst_add_extension(vk_inst_t *vk_inst, const char *extension) {
@@ -46,13 +98,45 @@ void vk_inst_add_layer(vk_inst_t *vk_inst, const char *layer) {
 }
 
 /* Create vulkan instance (if app_name is NULL, a default will be used) */
-void vk_inst_create(vk_inst_t *vk_inst, const char *app_name) {
+void vk_inst_create(
+    vk_inst_t *vk_inst,
+    const char *app_name,
+    bool use_messenger
+) {
   VkExtensionProperties *supported_extensions = NULL;
   uint32_t num_supported_extensions = 0;
   VkLayerProperties *supported_layers = NULL;
   uint32_t num_supported_layers = 0;
   VkApplicationInfo app_info;
   VkInstanceCreateInfo inst_create_info;
+  VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info;
+
+  if (use_messenger) {
+    /* Populate debug messenger create info */
+    debug_messenger_create_info.sType =
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debug_messenger_create_info.pNext = NULL;
+    debug_messenger_create_info.flags = 0;
+    debug_messenger_create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+    debug_messenger_create_info.pfnUserCallback = debug_callback;
+    debug_messenger_create_info.pUserData = NULL;
+    /* Set in struct */
+    vk_inst->use_messenger = true;
+    /* Add extensions */
+    vk_inst_add_extension(vk_inst, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    /* Add layers */
+    vk_inst_add_layer(vk_inst, "VK_LAYER_KHRONOS_validation");
+  }
+
 
   /* Get supported extensions */
   VK_CHECK(vkEnumerateInstanceExtensionProperties(
@@ -130,7 +214,10 @@ void vk_inst_create(vk_inst_t *vk_inst, const char *app_name) {
 
   /* Populate instance create info */
   inst_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  inst_create_info.pNext = NULL;
+  if (vk_inst->use_messenger)
+    inst_create_info.pNext = &debug_messenger_create_info;
+  else
+    inst_create_info.pNext = NULL;
   inst_create_info.flags = 0;
   inst_create_info.pApplicationInfo = &app_info;
   inst_create_info.enabledExtensionCount = vk_inst->num_extensions;
@@ -143,9 +230,50 @@ void vk_inst_create(vk_inst_t *vk_inst, const char *app_name) {
 
   /* Print message */
   log_msg(LOG_LEVEL_SUCCESS, "Vulkan instance created");
+
+  /* Create debug messenger */
+  if (vk_inst->use_messenger) {
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT =
+      (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+          vk_inst->instance,
+          "vkCreateDebugUtilsMessengerEXT"
+      );
+    if (vkCreateDebugUtilsMessengerEXT == NULL) {
+      log_msg(LOG_LEVEL_ERROR, "Failed to get vkCreateDebugUtilsMessengerEXT");
+      return;
+    }
+    VK_CHECK(vkCreateDebugUtilsMessengerEXT(
+        vk_inst->instance,
+        &debug_messenger_create_info,
+        NULL,
+        &vk_inst->debug_messenger
+    ));
+    /* Print message */
+    log_msg(LOG_LEVEL_SUCCESS, "Vulkan debug messenger created");
+  }
 }
 /* Destroy vulkan instance */
 void vk_inst_destroy(vk_inst_t *vk_inst) {
+  if (vk_inst->use_messenger) {
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
+      (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+          vk_inst->instance,
+          "vkDestroyDebugUtilsMessengerEXT"
+      );
+    if (vkDestroyDebugUtilsMessengerEXT == NULL) {
+      log_msg(LOG_LEVEL_ERROR, "Failed to get vkDestroyDebugUtilsMessengerEXT");
+      return;
+    }
+    vkDestroyDebugUtilsMessengerEXT(
+        vk_inst->instance,
+        vk_inst->debug_messenger,
+        NULL
+    );
+
+    /* Print message */
+    log_msg(LOG_LEVEL_SUCCESS, "Vulkan debug messenger destroyed");
+  }
+
   if (vk_inst->num_extensions > 0) free(vk_inst->extensions);
   if (vk_inst->num_layers > 0) free(vk_inst->layers);
   vkDestroyInstance(vk_inst->instance, NULL);
@@ -154,6 +282,8 @@ void vk_inst_destroy(vk_inst_t *vk_inst) {
   vk_inst->num_extensions = 0;
   vk_inst->num_layers = 0;
   vk_inst->instance = VK_NULL_HANDLE;
+  vk_inst->debug_messenger = VK_NULL_HANDLE;
+  vk_inst->use_messenger = false;
 
   /* Print message */
   log_msg(LOG_LEVEL_SUCCESS, "Vulkan instance destroyed");

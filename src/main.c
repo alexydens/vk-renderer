@@ -68,7 +68,7 @@ int main(void) {
   for (uint32_t i = 0; i < num_extensions_required; i++) {
     vk_inst_add_extension(&vk_inst, extensions_required[i]);
   }
-  vk_inst_create(&vk_inst, NULL);
+  vk_inst_create(&vk_inst, NULL, true);
 
   /* Main loop */
   window_state.running = true;
