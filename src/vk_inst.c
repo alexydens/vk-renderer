@@ -1,6 +1,7 @@
 /* Implements vk_inst.h */
 #include <vk_inst.h>
 #include <vulkan/vulkan_core.h>
+#include <wchar.h>
 
 /* Callback */
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -51,57 +52,69 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
   (void)pCallbackData;
   return VK_FALSE;
 }
-
-/* Initialize vulkan instance struct */
-void vk_inst_init(vk_inst_t *vk_inst) {
-  vk_inst->instance = VK_NULL_HANDLE;
-  vk_inst->extensions = NULL;
-  vk_inst->num_extensions = 0;
-  vk_inst->layers = NULL;
-  vk_inst->num_layers = 0;
-  vk_inst->debug_messenger = VK_NULL_HANDLE;
-  vk_inst->use_messenger = false;
+/* Initialize vulkan instance create info */
+void vk_inst_create_info_init(vk_inst_create_info_t *vk_inst_create_info) {
+  vk_inst_create_info->app_name = NULL;
+  vk_inst_create_info->use_messenger = false;
+  vk_inst_create_info->extensions = NULL;
+  vk_inst_create_info->num_extensions = 0;
+  vk_inst_create_info->layers = NULL;
+  vk_inst_create_info->num_layers = 0;
 }
+/* Free vulkan instance create info */
+void vk_inst_create_info_free(vk_inst_create_info_t *vk_inst_create_info) {
+  if (vk_inst_create_info->extensions != NULL)
+    free(vk_inst_create_info->extensions);
+  if (vk_inst_create_info->layers != NULL)
+    free(vk_inst_create_info->layers);
+}
+
 /* Add requested extension */
-void vk_inst_add_extension(vk_inst_t *vk_inst, const char *extension) {
-  if (vk_inst->extensions == NULL) {
-    vk_inst->extensions = malloc(sizeof(char *) * 1);
-    ASSERT(vk_inst->extensions != NULL);
-    vk_inst->extensions[0] = extension;
-    vk_inst->num_extensions = 1;
+void vk_inst_create_info_add_extension(
+    vk_inst_create_info_t *vk_inst_create_info,
+    const char *extension
+) {
+  if (vk_inst_create_info->extensions == NULL) {
+    vk_inst_create_info->extensions = malloc(sizeof(char *) * 1);
+    ASSERT(vk_inst_create_info->extensions != NULL);
+    vk_inst_create_info->extensions[0] = extension;
+    vk_inst_create_info->num_extensions = 1;
     return;
   }
-  vk_inst->extensions = realloc(
-      vk_inst->extensions,
-      sizeof(char *) * (vk_inst->num_extensions + 1)
+  vk_inst_create_info->extensions = realloc(
+      vk_inst_create_info->extensions,
+      sizeof(char *) * (vk_inst_create_info->num_extensions + 1)
   );
-  ASSERT(vk_inst->extensions != NULL);
-  vk_inst->extensions[vk_inst->num_extensions] = extension;
-  vk_inst->num_extensions++;
+  ASSERT(vk_inst_create_info->extensions != NULL);
+  vk_inst_create_info->extensions[vk_inst_create_info->num_extensions]
+    = extension;
+  vk_inst_create_info->num_extensions++;
 }
 /* Add requested layer */
-void vk_inst_add_layer(vk_inst_t *vk_inst, const char *layer) {
-  if (vk_inst->layers == NULL) {
-    vk_inst->layers = malloc(sizeof(char *) * 1);
-    ASSERT(vk_inst->layers != NULL);
-    vk_inst->layers[0] = layer;
-    vk_inst->num_layers = 1;
+void vk_inst_create_info_add_layer(
+    vk_inst_create_info_t *vk_inst_create_info,
+    const char *layer
+) {
+  if (vk_inst_create_info->layers == NULL) {
+    vk_inst_create_info->layers = malloc(sizeof(char *) * 1);
+    ASSERT(vk_inst_create_info->layers != NULL);
+    vk_inst_create_info->layers[0] = layer;
+    vk_inst_create_info->num_layers = 1;
     return;
   }
-  vk_inst->layers = realloc(
-      vk_inst->layers,
-      sizeof(char *) * (vk_inst->num_layers + 1)
+  vk_inst_create_info->layers = realloc(
+      vk_inst_create_info->layers,
+      sizeof(char *) * (vk_inst_create_info->num_layers + 1)
   );
-  ASSERT(vk_inst->layers != NULL);
-  vk_inst->layers[vk_inst->num_layers] = layer;
-  vk_inst->num_layers++;
+  ASSERT(vk_inst_create_info->layers != NULL);
+  vk_inst_create_info->layers[vk_inst_create_info->num_layers] = layer;
+  vk_inst_create_info->num_layers++;
 }
 
-/* Create vulkan instance (if app_name is NULL, a default will be used) */
+/* Create vulkan instance */
 void vk_inst_create(
     vk_inst_t *vk_inst,
-    const char *app_name,
-    bool use_messenger
+    vk_inst_create_info_t *vk_inst_create_info
 ) {
   VkExtensionProperties *supported_extensions = NULL;
   uint32_t num_supported_extensions = 0;
@@ -111,7 +124,7 @@ void vk_inst_create(
   VkInstanceCreateInfo inst_create_info;
   VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info;
 
-  if (use_messenger) {
+  if (vk_inst_create_info->use_messenger) {
     /* Populate debug messenger create info */
     debug_messenger_create_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -132,9 +145,15 @@ void vk_inst_create(
     /* Set in struct */
     vk_inst->use_messenger = true;
     /* Add extensions */
-    vk_inst_add_extension(vk_inst, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    vk_inst_create_info_add_extension(
+        vk_inst_create_info,
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+    );
     /* Add layers */
-    vk_inst_add_layer(vk_inst, "VK_LAYER_KHRONOS_validation");
+    vk_inst_create_info_add_layer(
+        vk_inst_create_info,
+        "VK_LAYER_KHRONOS_validation"
+    );
   }
 
 
@@ -171,11 +190,11 @@ void vk_inst_create(
   }
 
   /* Check requested extensions are supported */
-  for (uint32_t i = 0; i < vk_inst->num_extensions; i++) {
+  for (uint32_t i = 0; i < vk_inst_create_info->num_extensions; i++) {
     bool supported = false;
     for (uint32_t j = 0; j < num_supported_extensions; j++) {
       if (strcmp(
-            vk_inst->extensions[i],
+            vk_inst_create_info->extensions[i],
             supported_extensions[j].extensionName) == 0
       ) {
         supported = true;
@@ -183,15 +202,19 @@ void vk_inst_create(
       }
     }
     ASSERT(supported);
-    log_msg(LOG_LEVEL_INFO, "Using extension: %s", vk_inst->extensions[i]);
+    log_msg(
+        LOG_LEVEL_INFO,
+        "Using extension: %s",
+        vk_inst_create_info->extensions[i]
+    );
   }
 
   /* Check requested layers are supported */
-  for (uint32_t i = 0; i < vk_inst->num_layers; i++) {
+  for (uint32_t i = 0; i < vk_inst_create_info->num_layers; i++) {
     bool supported = false;
     for (uint32_t j = 0; j < num_supported_layers; j++) {
       if (strcmp(
-            vk_inst->layers[i],
+            vk_inst_create_info->layers[i],
             supported_layers[j].layerName) == 0
       ) {
         supported = true;
@@ -199,13 +222,14 @@ void vk_inst_create(
       }
     }
     ASSERT(supported);
-    log_msg(LOG_LEVEL_INFO, "Using layer: %s", vk_inst->layers[i]);
+    log_msg(LOG_LEVEL_INFO, "Using layer: %s", vk_inst_create_info->layers[i]);
   }
 
   /* Populate application info */
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   app_info.pNext = NULL;
-  if (app_name) app_info.pApplicationName = app_name;
+  if (vk_inst_create_info->app_name)
+    app_info.pApplicationName = vk_inst_create_info->app_name;
   else app_info.pApplicationName = "vk-renderer application";
   app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   app_info.pEngineName = "vk-renderer";
@@ -220,10 +244,10 @@ void vk_inst_create(
     inst_create_info.pNext = NULL;
   inst_create_info.flags = 0;
   inst_create_info.pApplicationInfo = &app_info;
-  inst_create_info.enabledExtensionCount = vk_inst->num_extensions;
-  inst_create_info.ppEnabledExtensionNames = vk_inst->extensions;
-  inst_create_info.enabledLayerCount = vk_inst->num_layers;
-  inst_create_info.ppEnabledLayerNames = vk_inst->layers;
+  inst_create_info.enabledExtensionCount = vk_inst_create_info->num_extensions;
+  inst_create_info.ppEnabledExtensionNames = vk_inst_create_info->extensions;
+  inst_create_info.enabledLayerCount = vk_inst_create_info->num_layers;
+  inst_create_info.ppEnabledLayerNames = vk_inst_create_info->layers;
 
   /* Create instance */
   VK_CHECK(vkCreateInstance(&inst_create_info, NULL, &vk_inst->instance));
@@ -274,13 +298,7 @@ void vk_inst_destroy(vk_inst_t *vk_inst) {
     log_msg(LOG_LEVEL_SUCCESS, "Vulkan debug messenger destroyed");
   }
 
-  if (vk_inst->num_extensions > 0) free(vk_inst->extensions);
-  if (vk_inst->num_layers > 0) free(vk_inst->layers);
   vkDestroyInstance(vk_inst->instance, NULL);
-  vk_inst->extensions = NULL;
-  vk_inst->layers = NULL;
-  vk_inst->num_extensions = 0;
-  vk_inst->num_layers = 0;
   vk_inst->instance = VK_NULL_HANDLE;
   vk_inst->debug_messenger = VK_NULL_HANDLE;
   vk_inst->use_messenger = false;

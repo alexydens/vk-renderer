@@ -63,12 +63,16 @@ int main(void) {
   }
 
   /* Create vulkan objects */
+  vk_inst_create_info_t vk_inst_create_info;
   vk_inst_t vk_inst;
-  vk_inst_init(&vk_inst);
+  vk_inst_create_info_init(&vk_inst_create_info);
   for (uint32_t i = 0; i < num_extensions_required; i++) {
-    vk_inst_add_extension(&vk_inst, extensions_required[i]);
+    vk_inst_create_info_add_extension(&vk_inst_create_info, extensions_required[i]);
   }
-  vk_inst_create(&vk_inst, NULL, true);
+  vk_inst_create_info.app_name = "Test Application";
+  vk_inst_create_info.use_messenger = true;
+  vk_inst_create(&vk_inst, &vk_inst_create_info);
+  vk_inst_create_info_free(&vk_inst_create_info);
 
   /* Main loop */
   window_state.running = true;
