@@ -10,6 +10,7 @@
 /* Project includes */
 #include <base.h>
 #include <vk_inst.h>
+#include <vk_surf.h>
 
 /* Window state */
 struct {
@@ -65,6 +66,7 @@ int main(void) {
   /* Create vulkan objects */
   vk_inst_create_info_t vk_inst_create_info;
   vk_inst_t vk_inst;
+  vk_surf_t vk_surf;
   vk_inst_create_info_init(&vk_inst_create_info);
   for (uint32_t i = 0; i < num_extensions_required; i++) {
     vk_inst_create_info_add_extension(&vk_inst_create_info, extensions_required[i]);
@@ -73,6 +75,8 @@ int main(void) {
   vk_inst_create_info.use_messenger = true;
   vk_inst_create(&vk_inst, &vk_inst_create_info);
   vk_inst_create_info_free(&vk_inst_create_info);
+  SDL_Vulkan_CreateSurface(window_state.window, vk_inst.instance, &vk_surf.surface);
+  log_msg(LOG_LEVEL_SUCCESS, "Vulkan surface created");
 
   /* Main loop */
   window_state.running = true;
@@ -96,6 +100,7 @@ int main(void) {
   }
 
   /* Destroy vulkan objects */
+  vk_surf_destroy(&vk_surf, &vk_inst);
   vk_inst_destroy(&vk_inst);
 
   /* Other cleanup */

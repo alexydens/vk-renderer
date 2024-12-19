@@ -5,6 +5,7 @@
 /* Includes */
 #include <base.h>
 #include <vk_inst.h>
+#include <vk_surf.h>
 
 /* Creation information */
 typedef struct {
@@ -25,11 +26,11 @@ typedef struct {
 typedef struct {
   VkPhysicalDevice physical_device;   /* Vulkan physical device */
   VkDevice device;                    /* Vulkan device */
-  uint32_t grapihcs_queue_family;     /* Graphics queue family index */
+  uint32_t graphics_queue_family;     /* Graphics queue family index */
   uint32_t present_queue_family;      /* Present queue family index */
   uint32_t compute_queue_family;      /* Compute queue family index */
   uint32_t transfer_queue_family;     /* Transfer queue family index */
-  VkQueue grapics_queue;              /* Vulkan graphics queue */
+  VkQueue graphics_queue;             /* Vulkan graphics queue */
   VkQueue present_queue;              /* Vulkan present queue */
   VkQueue compute_queue;              /* Vulkan compute queue */
   VkQueue transfer_queue;             /* Vulkan transfer queue */
@@ -55,8 +56,10 @@ extern void vk_dev_create_info_free(
 );
 
 /* Create vulkan device */
-extern vk_dev_t vk_dev_create(
+extern void vk_dev_create(
+    vk_dev_t *vk_dev,
     vk_inst_t *vk_inst,
+    vk_surf_t *vk_surf,
     vk_dev_create_info_t *vk_dev_create_info
 );
 /* Destroy vulkan device */
