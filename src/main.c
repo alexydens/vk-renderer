@@ -10,13 +10,17 @@
 /* Project includes */
 #include <base.h>
 #include <vk_inst.h>
-#include <vk_surf.h>
 
 /* Window state */
 struct {
   SDL_Window *window;
   bool running;
 } window_state;
+
+/* Get required instance extensions */
+void get_required_exts(const char **exts, uint32_t *count) {
+  SDL_Vulkan_GetInstanceExtensions(window_state.window, count, exts);
+}
 
 /* Entry point */
 int main(void) {
@@ -45,38 +49,17 @@ int main(void) {
     return 1;
   }
   log_msg(LOG_LEVEL_SUCCESS, "Created window");
-
-  /* Get required extensions */
-  const char **extensions_required = NULL;
-  uint32_t num_extensions_required = 0;
-  SDL_Vulkan_GetInstanceExtensions(
-      window_state.window,
-      &num_extensions_required,
-      NULL
-  );
-  if (num_extensions_required > 0) {
-    extensions_required = malloc(sizeof(char *) * num_extensions_required);
-    SDL_Vulkan_GetInstanceExtensions(
-        window_state.window,
-        &num_extensions_required,
-        extensions_required
-    );
-  }
-
-  /* Create vulkan objects */
-  vk_inst_create_info_t vk_inst_create_info;
-  vk_inst_t vk_inst;
-  vk_surf_t vk_surf;
-  vk_inst_create_info_init(&vk_inst_create_info);
-  for (uint32_t i = 0; i < num_extensions_required; i++) {
-    vk_inst_create_info_add_extension(&vk_inst_create_info, extensions_required[i]);
-  }
-  vk_inst_create_info.app_name = "Test Application";
-  vk_inst_create_info.use_messenger = true;
-  vk_inst_create(&vk_inst, &vk_inst_create_info);
-  vk_inst_create_info_free(&vk_inst_create_info);
-  SDL_Vulkan_CreateSurface(window_state.window, vk_inst.instance, &vk_surf.surface);
-  log_msg(LOG_LEVEL_SUCCESS, "Vulkan surface created");
+  
+  /* Vulkan initialization */
+  vk_inst_builder_t instance_builder = vk_inst_builder();
+  vk_inst_builder_use_messenger(&instance_builder);
+  vk_inst_builder_add_ext(&instance_builder, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+  vk_inst_builder_add_layer(&instance_builder, "VK_LAYER_KHRONOS_validation");
+  vk_inst_builder_add_required_exts(&instance_builder, get_required_exts);
+  vk_inst_builder_set_app_name(&instance_builder, "Vulkan Renderer Test");
+  vk_inst_builder_set_app_version(&instance_builder, 0, 0, 0);
+  vk_inst_t instance = vk_inst_create(&instance_builder);
+  log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan instance");
 
   /* Main loop */
   window_state.running = true;
@@ -99,12 +82,10 @@ int main(void) {
     }
   }
 
-  /* Destroy vulkan objects */
-  vk_surf_destroy(&vk_surf, &vk_inst);
-  vk_inst_destroy(&vk_inst);
+  /* Vulkan cleanup */
+  vk_inst_destroy(&instance);
+  log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan instance");
 
-  /* Other cleanup */
-  if (extensions_required != NULL) free(extensions_required);
   /* Destroy window */
   SDL_DestroyWindow(window_state.window);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed window");
