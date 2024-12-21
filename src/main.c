@@ -10,6 +10,7 @@
 /* Project includes */
 #include <base.h>
 #include <vk_inst.h>
+#include <vk_surf.h>
 
 /* Window state */
 struct {
@@ -18,8 +19,14 @@ struct {
 } window_state;
 
 /* Get required instance extensions */
-void get_required_exts(const char **exts, uint32_t *count) {
+static void get_required_exts(const char **exts, uint32_t *count) {
   SDL_Vulkan_GetInstanceExtensions(window_state.window, count, exts);
+}
+/* Create surface */
+VkSurfaceKHR create_surface(const VkInstance instance) {
+  VkSurfaceKHR surface;
+  SDL_Vulkan_CreateSurface(window_state.window, instance, &surface);
+  return surface;
 }
 
 /* Entry point */
@@ -51,6 +58,8 @@ int main(void) {
   log_msg(LOG_LEVEL_SUCCESS, "Created window");
   
   /* Vulkan initialization */
+  vk_inst_t instance;
+  vk_surf_t surface;
   vk_inst_builder_t instance_builder = vk_inst_builder();
   vk_inst_builder_use_messenger(&instance_builder);
   vk_inst_builder_add_ext(&instance_builder, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -58,8 +67,10 @@ int main(void) {
   vk_inst_builder_add_required_exts(&instance_builder, get_required_exts);
   vk_inst_builder_set_app_name(&instance_builder, "Vulkan Renderer Test");
   vk_inst_builder_set_app_version(&instance_builder, 0, 0, 0);
-  vk_inst_t instance = vk_inst_create(&instance_builder);
+  instance = vk_inst_create(&instance_builder);
   log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan instance");
+  surface = create_surface(instance.instance);
+  log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan surface");
 
   /* Main loop */
   window_state.running = true;
@@ -83,6 +94,8 @@ int main(void) {
   }
 
   /* Vulkan cleanup */
+  vk_surf_destroy(&surface, &instance);
+  log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan surface");
   vk_inst_destroy(&instance);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan instance");
 

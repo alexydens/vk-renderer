@@ -152,22 +152,24 @@ vk_inst_t vk_inst_create(vk_inst_builder_t *builder) {
 
   /* Get supported extensions */
   vkEnumerateInstanceExtensionProperties(NULL, &supported_ext_count, NULL);
-  ASSERT(supported_ext_count);
-  supported_exts = (VkExtensionProperties *)malloc(
-    sizeof(VkExtensionProperties) * supported_ext_count
-  );
-  ASSERT(supported_exts);
-  vkEnumerateInstanceExtensionProperties(
-    NULL, &supported_ext_count, supported_exts
-  );
+  if (supported_ext_count > 0) {
+    supported_exts = (VkExtensionProperties *)malloc(
+      sizeof(VkExtensionProperties) * supported_ext_count
+    );
+    ASSERT(supported_exts);
+    vkEnumerateInstanceExtensionProperties(
+      NULL, &supported_ext_count, supported_exts
+    );
+  }
   /* Get supported layers */
   vkEnumerateInstanceLayerProperties(&supported_layer_count, NULL);
-  ASSERT(supported_layer_count);
-  supported_layers = (VkLayerProperties *)malloc(
-    sizeof(VkLayerProperties) * supported_layer_count
-  );
-  ASSERT(supported_layers);
-  vkEnumerateInstanceLayerProperties(&supported_layer_count, supported_layers);
+  if (supported_layer_count > 0) {
+    supported_layers = (VkLayerProperties *)malloc(
+      sizeof(VkLayerProperties) * supported_layer_count
+    );
+    ASSERT(supported_layers);
+    vkEnumerateInstanceLayerProperties(&supported_layer_count, supported_layers);
+  }
 
   /* Check every extension is supported */
   for (uint32_t i = 0; i < builder->extension_count; i++) {

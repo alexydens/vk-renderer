@@ -5,7 +5,7 @@
 /* Includes */
 #include <base.h>
 
-/* Structures */
+/* Types */
 /* Vulkan instance builder */
 typedef struct {
   bool use_messenger;
