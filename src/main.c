@@ -11,6 +11,7 @@
 #include <base.h>
 #include <vk_inst.h>
 #include <vk_surf.h>
+#include <vk_phys_dev.h>
 
 /* Window state */
 struct {
@@ -23,11 +24,25 @@ static void get_required_exts(const char **exts, uint32_t *count) {
   SDL_Vulkan_GetInstanceExtensions(window_state.window, count, exts);
 }
 /* Create surface */
-VkSurfaceKHR create_surface(const VkInstance instance) {
+static VkSurfaceKHR create_surface(const VkInstance instance) {
   VkSurfaceKHR surface;
   SDL_Vulkan_CreateSurface(window_state.window, instance, &surface);
   return surface;
 }
+/* Score physical device */
+static uint32_t score_physical_device(const vk_phys_dev_info_t *info) {
+  switch (info->properties.deviceType) {
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+      return 1000;
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+      return 250;
+    case VK_PHYSICAL_DEVICE_TYPE_CPU:
+      return 125;
+    default:
+      return 0;
+  }
+}
+
 
 /* Entry point */
 int main(void) {
@@ -60,6 +75,8 @@ int main(void) {
   /* Vulkan initialization */
   vk_inst_t instance;
   vk_surf_t surface;
+  vk_phys_dev_t physical_device;
+  vk_phys_dev_info_t physical_device_info;
   vk_inst_builder_t instance_builder = vk_inst_builder();
   vk_inst_builder_use_messenger(&instance_builder);
   vk_inst_builder_add_ext(&instance_builder, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -71,6 +88,21 @@ int main(void) {
   log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan instance");
   surface = create_surface(instance.instance);
   log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan surface");
+  physical_device = vk_phys_dev_choose(
+      score_physical_device,
+      &instance,
+      &surface
+  );
+  vk_phys_dev_get_info(
+      physical_device,
+      &physical_device_info,
+      &surface
+  );
+  log_msg(
+      LOG_LEVEL_SUCCESS,
+      "Chose Vulkan physical device: %s",
+      physical_device_info.properties.deviceName
+  );
 
   /* Main loop */
   window_state.running = true;
@@ -94,6 +126,7 @@ int main(void) {
   }
 
   /* Vulkan cleanup */
+  vk_phys_dev_info_free(&physical_device_info);
   vk_surf_destroy(&surface, &instance);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan surface");
   vk_inst_destroy(&instance);
