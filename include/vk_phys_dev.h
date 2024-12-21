@@ -6,6 +6,7 @@
 /* Includes */
 #include <base.h>
 #include <vk_surf.h>
+#include <vk_inst.h>
 
 /* Types */
 /* Vulkan physical device */
@@ -44,5 +45,11 @@ extern void vk_phys_dev_get_info(
 );
 /* Free a physical device information structure */
 extern void vk_phys_dev_info_free(vk_phys_dev_info_t *info);
+/* Choose a physical device based on a scoring callback */
+extern vk_phys_dev_t vk_phys_dev_choose(
+    uint32_t (*score)(const vk_phys_dev_info_t *info),
+    const vk_inst_t *inst,
+    const vk_surf_t *surf
+);
 
 #endif /* VK_PHYS_DEV_H */

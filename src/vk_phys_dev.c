@@ -1,6 +1,5 @@
 /* Implements vk_phys_dev.h */
 #include <vk_phys_dev.h>
-#include <vulkan/vulkan_core.h>
 
 /* Get a physical device's information */
 void vk_phys_dev_get_info(
@@ -151,4 +150,42 @@ void vk_phys_dev_info_free(vk_phys_dev_info_t *info) {
   if (info->surface_formats) free(info->surface_formats);
   if (info->present_modes) free(info->present_modes);
   memset(info, 0, sizeof(vk_phys_dev_info_t));
+}
+/* Choose a physical device based on a scoring callback */
+vk_phys_dev_t vk_phys_dev_choose(
+    uint32_t (*score)(const vk_phys_dev_info_t *info),
+    const vk_inst_t *inst,
+    const vk_surf_t *surf
+) {
+  VkPhysicalDevice *physical_devices;
+  uint32_t physical_devices_count;
+  uint32_t best_score = 0;
+  uint32_t best_score_index = 0;
+  vkEnumeratePhysicalDevices(inst->instance, &physical_devices_count, NULL);
+  ASSERT(physical_devices_count > 0);
+  physical_devices = (VkPhysicalDevice *)malloc(
+      sizeof(VkPhysicalDevice) * physical_devices_count
+  );
+  ASSERT(physical_devices);
+  vkEnumeratePhysicalDevices(
+      inst->instance,
+      &physical_devices_count,
+      physical_devices
+  );
+  
+  for (uint32_t i = 0; i < physical_devices_count; i++) {
+    vk_phys_dev_info_t info;
+    vk_phys_dev_get_info(
+        physical_devices[i],
+        &info,
+        surf
+    );
+    uint32_t current_score = score(&info);
+    vk_phys_dev_info_free(&info);
+    if (current_score > best_score) {
+      best_score = current_score;
+      best_score_index = i;
+    }
+  }
+  return physical_devices[best_score_index];
 }
