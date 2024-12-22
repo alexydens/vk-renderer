@@ -1,6 +1,5 @@
 /* Implements vk_inst.h */
 #include <vk_inst.h>
-#include <vulkan/vulkan_core.h>
 
 /* Debug messenger callback */
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
