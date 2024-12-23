@@ -12,6 +12,7 @@
 #include <vk_inst.h>
 #include <vk_surf.h>
 #include <vk_phys_dev.h>
+#include <vk_dev.h>
 
 /* Window state */
 struct {
@@ -77,6 +78,7 @@ int main(void) {
   vk_surf_t surface;
   vk_phys_dev_t physical_device;
   vk_phys_dev_info_t physical_device_info;
+  vk_dev_t device;
   vk_inst_builder_t instance_builder = vk_inst_builder();
   vk_inst_builder_use_messenger(&instance_builder);
   vk_inst_builder_add_ext(&instance_builder, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -103,6 +105,17 @@ int main(void) {
       "Chose Vulkan physical device: %s",
       physical_device_info.properties.deviceName
   );
+  vk_dev_builder_t device_builder = vk_dev_builder();
+  vk_dev_builder_add_ext(&device_builder, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+  vk_dev_builder_add_layer(&device_builder, "VK_LAYER_KHRONOS_validation");
+  vk_dev_builder_add_graphics_queue(&device_builder, 1.0f);
+  vk_dev_builder_add_present_queue(&device_builder, 1.0f);
+  device = vk_dev_create(
+      &physical_device,
+      &physical_device_info,
+      &device_builder
+  );
+  log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan device");
 
   /* Main loop */
   window_state.running = true;
@@ -126,7 +139,9 @@ int main(void) {
   }
 
   /* Vulkan cleanup */
+  vk_dev_destroy(&device);
   vk_phys_dev_info_free(&physical_device_info);
+  log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan device");
   vk_surf_destroy(&surface, &instance);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan surface");
   vk_inst_destroy(&instance);
