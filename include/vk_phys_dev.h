@@ -22,6 +22,10 @@ typedef struct {
     uint32_t present_index;
     uint32_t compute_index;
     uint32_t transfer_index;
+    uint32_t max_graphics_queues;
+    uint32_t max_present_queues;
+    uint32_t max_compute_queues;
+    uint32_t max_transfer_queues;
     bool graphics_supported;
     bool present_supported;
     bool compute_supported;

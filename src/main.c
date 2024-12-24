@@ -15,10 +15,12 @@
 #include <vk_dev.h>
 
 /* Window state */
-struct {
+static struct {
   SDL_Window *window;
   bool running;
 } window_state;
+/* Other state */
+static bool same_queue_family = false;
 
 /* Get required instance extensions */
 static void get_required_exts(const char **exts, uint32_t *count) {
@@ -95,21 +97,28 @@ int main(void) {
       &instance,
       &surface
   );
-  vk_phys_dev_get_info(
-      physical_device,
-      &physical_device_info,
-      &surface
-  );
+  vk_phys_dev_get_info(physical_device, &physical_device_info, &surface);
+  same_queue_family = physical_device_info.queue_families.graphics_index
+    == physical_device_info.queue_families.present_index;
   log_msg(
       LOG_LEVEL_SUCCESS,
       "Chose Vulkan physical device: %s",
       physical_device_info.properties.deviceName
   );
+  if (same_queue_family)
+    log_msg(
+        LOG_LEVEL_INFO,
+        "Same queue family used for graphics and presentation"
+    );
   vk_dev_builder_t device_builder = vk_dev_builder();
   vk_dev_builder_add_ext(&device_builder, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
   vk_dev_builder_add_layer(&device_builder, "VK_LAYER_KHRONOS_validation");
-  vk_dev_builder_add_graphics_queue(&device_builder, 1.0f);
-  vk_dev_builder_add_present_queue(&device_builder, 1.0f);
+  if (same_queue_family) {
+    vk_dev_builder_add_present_queue(&device_builder, 1.0f);
+  } else {
+    vk_dev_builder_add_graphics_queue(&device_builder, 1.0f);
+    vk_dev_builder_add_present_queue(&device_builder, 1.0f);
+  }
   device = vk_dev_create(
       &physical_device,
       &physical_device_info,

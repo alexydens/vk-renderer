@@ -209,6 +209,36 @@ vk_dev_t vk_dev_create(
   dev.transfer_queues = NULL;
   dev.transfer_queue_count = 0;
 
+  /* Check there aren't too many requested queues */
+  if (
+      builder->graphics_queues
+      > phys_dev_info->queue_families.max_graphics_queues
+  ) {
+    log_msg(LOG_LEVEL_ERROR, "Too many graphics queues requested");
+    abort();
+  }
+  if (
+      builder->present_queues
+      > phys_dev_info->queue_families.max_present_queues
+  ) {
+    log_msg(LOG_LEVEL_ERROR, "Too many present queues requested");
+    abort();
+  }
+  if (
+      builder->compute_queues
+      > phys_dev_info->queue_families.max_compute_queues
+  ) {
+    log_msg(LOG_LEVEL_ERROR, "Too many compute queues requested");
+    abort();
+  }
+  if (
+      builder->transfer_queues
+      > phys_dev_info->queue_families.max_transfer_queues
+  ) {
+    log_msg(LOG_LEVEL_ERROR, "Too many transfer queues requested");
+    abort();
+  }
+
   /* Populate queue create infos */
   if (builder->graphics_queues > 0) {
     queue_create_infos[cur].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;

@@ -50,18 +50,26 @@ void vk_phys_dev_get_info(
       if (present_support == VK_TRUE) {
         info->queue_families.present_index = i;
         info->queue_families.present_supported = true;
+        info->queue_families.max_present_queues =
+          queue_families[i].queueCount;
       }
       if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
         info->queue_families.graphics_index = i;
         info->queue_families.graphics_supported = true;
+        info->queue_families.max_graphics_queues =
+          queue_families[i].queueCount;
       }
       if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
         info->queue_families.compute_index = i;
         info->queue_families.compute_supported = true;
+        info->queue_families.max_compute_queues =
+          queue_families[i].queueCount;
       }
       if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
         info->queue_families.transfer_index = i;
         info->queue_families.transfer_supported = true;
+        info->queue_families.max_transfer_queues =
+          queue_families[i].queueCount;
       }
     }
     free(queue_families);
