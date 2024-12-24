@@ -298,12 +298,12 @@ vk_dev_t vk_dev_create(
   dev_create_info.pEnabledFeatures = &builder->features;
 
   /* Create device */
-  vkCreateDevice(
+  VK_CHECK(vkCreateDevice(
       *phys_dev,
       &dev_create_info,
       NULL,
       &dev.device
-  );
+  ));
 
   /* Allocate space for queues */
   if (builder->graphics_queues > 0) {
