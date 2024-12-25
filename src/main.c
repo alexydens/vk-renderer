@@ -13,6 +13,7 @@
 #include <vk_surf.h>
 #include <vk_phys_dev.h>
 #include <vk_dev.h>
+#include <vk_swapchain.h>
 
 /* Window state */
 static struct {
@@ -81,6 +82,7 @@ int main(void) {
   vk_phys_dev_t physical_device;
   vk_phys_dev_info_t physical_device_info;
   vk_dev_t device;
+  vk_swapchain_t swapchain;
   vk_inst_builder_t instance_builder = vk_inst_builder();
   vk_inst_builder_use_messenger(&instance_builder);
   vk_inst_builder_add_ext(&instance_builder, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -125,29 +127,66 @@ int main(void) {
       &device_builder
   );
   log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan device");
+  vk_swapchain_builder_t swapchain_builder = vk_swapchain_builder();
+  vk_swapchain_builder_set_extent(&swapchain_builder, 800, 600);
+  vk_swapchain_builder_set_present_mode(&swapchain_builder, VK_PRESENT_MODE_FIFO_KHR);
+  for (uint32_t i = 0; i < physical_device_info.surface_formats_count; i++) {
+    if (physical_device_info.surface_formats[i].format == VK_FORMAT_B8G8R8A8_UNORM) {
+      vk_swapchain_builder_set_format(
+          &swapchain_builder,
+          physical_device_info.surface_formats[i]
+      );
+      break;
+    }
+  }
+  uint32_t image_count =
+    physical_device_info.surface_capabilities.minImageCount + 1;
+  if (
+      physical_device_info.surface_capabilities.maxImageCount > 0
+      && image_count > physical_device_info.surface_capabilities.maxImageCount
+  ) image_count = physical_device_info.surface_capabilities.maxImageCount;
+  vk_swapchain_builder_set_image_count(&swapchain_builder, image_count);
+  swapchain = vk_swapchain_create(
+      &device,
+      &surface,
+      &swapchain_builder
+  );
+  log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan swapchain");
 
   /* Main loop */
   window_state.running = true;
   while (window_state.running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        window_state.running = false;
-      }
-      if (event.type == SDL_WINDOWEVENT) {
-        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+      switch(event.type) {
+        case SDL_QUIT:
           window_state.running = false;
-        }
-        if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-          uint32_t width = event.window.data1;
-          uint32_t height = event.window.data2;
-          log_msg(LOG_LEVEL_INFO, "Window resized to %dx%d", width, height);
-        }
+          break;
+        case SDL_WINDOWEVENT:
+          switch (event.window.event) {
+            case SDL_WINDOWEVENT_CLOSE:
+              window_state.running = false;
+              break;
+            case SDL_WINDOWEVENT_RESIZED:
+              {
+                uint32_t width = event.window.data1;
+                uint32_t height = event.window.data2;
+                log_msg(
+                    LOG_LEVEL_INFO,
+                    "Window resized to %dx%d",
+                    width,
+                    height
+                );
+              } break;
+          } break;
+        default: break;
       }
     }
   }
 
   /* Vulkan cleanup */
+  vk_swapchain_destroy(&swapchain, &device);
+  log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan swapchain");
   vk_dev_destroy(&device);
   vk_phys_dev_info_free(&physical_device_info);
   log_msg(LOG_LEVEL_SUCCESS, "Destroyed Vulkan device");
