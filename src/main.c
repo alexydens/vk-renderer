@@ -142,6 +142,8 @@ static void app_create_swapchain(void) {
       &app_state.surface,
       &builder
   );
+  log_msg(LOG_LEVEL_INFO, "Swapchain image count: %d", app_state.swapchain.image_count);
+  log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan swapchain");
 }
 static void app_cleanup_vulkan(void) {
   vk_swapchain_destroy(&app_state.swapchain, &app_state.device);
@@ -157,7 +159,7 @@ static void app_cleanup_vulkan(void) {
 
 /* Entry point */
 int main(void) {
-  /* Make sure to use x11 */
+  /* Choose backend */
   SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
   /* Initialize SDL2 */
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {

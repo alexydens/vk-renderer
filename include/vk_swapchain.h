@@ -26,7 +26,11 @@ typedef struct {
   uint32_t queue_family_index_count;
 } vk_swapchain_builder_t;
 /* Vulkan swapchain */
-typedef VkSwapchainKHR vk_swapchain_t;
+typedef struct {
+  VkSwapchainKHR swapchain;
+  VkImage *images;
+  uint32_t image_count;
+} vk_swapchain_t;
 
 /* Create a Vulkan swapchain builder */
 extern vk_swapchain_builder_t vk_swapchain_builder(void);

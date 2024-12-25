@@ -142,7 +142,23 @@ vk_swapchain_t vk_swapchain_create(
         dev->device,
         &swapchain_create_info,
         NULL,
-        &swapchain
+        &swapchain.swapchain
+  ));
+
+  /* Get all images */
+  VK_CHECK(vkGetSwapchainImagesKHR(
+        dev->device,
+        swapchain.swapchain,
+        &swapchain.image_count,
+        NULL
+  ));
+  swapchain.images = (VkImage *)malloc(sizeof(VkImage) * swapchain.image_count);
+  ASSERT(swapchain.images);
+  VK_CHECK(vkGetSwapchainImagesKHR(
+        dev->device,
+        swapchain.swapchain,
+        &swapchain.image_count,
+        swapchain.images
   ));
 
   /* Free builder */
@@ -153,5 +169,7 @@ vk_swapchain_t vk_swapchain_create(
 }
 /* Destroy a Vulkan swapchain */
 void vk_swapchain_destroy(vk_swapchain_t *swapchain, vk_dev_t *dev) {
-  vkDestroySwapchainKHR(dev->device, *swapchain, NULL);
+  vkDestroySwapchainKHR(dev->device, swapchain->swapchain, NULL);
+  if (swapchain->images) free(swapchain->images);
+  memset(swapchain, 0, sizeof(vk_swapchain_t));
 }
