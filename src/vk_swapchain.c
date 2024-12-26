@@ -1,6 +1,5 @@
 /* Implements vk_swapchain.h */
 #include <vk_swapchain.h>
-#include <vulkan/vulkan_core.h>
 
 /* Create a Vulkan swapchain builder */
 vk_swapchain_builder_t vk_swapchain_builder(void) {

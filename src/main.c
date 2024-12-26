@@ -14,7 +14,6 @@
 #include <vk_phys_dev.h>
 #include <vk_dev.h>
 #include <vk_swapchain.h>
-#include <vulkan/vulkan_core.h>
 
 /* App state */
 static struct {
