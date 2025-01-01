@@ -109,8 +109,6 @@ static void app_create_device(void) {
 }
 static void app_create_swapchain(void) {
   vk_swapchain_builder_t builder = vk_swapchain_builder();
-  vk_swapchain_builder_set_extent(&builder, app_state.width, app_state.height);
-  vk_swapchain_builder_set_present_mode(&builder, VK_PRESENT_MODE_FIFO_KHR);
   uint32_t image_count =
     app_state.physical_device_info.surface_capabilities.minImageCount + 1;
   if (
@@ -135,12 +133,44 @@ static void app_create_swapchain(void) {
       break;
     }
   }
+  vk_swapchain_builder_set_extent(&builder, app_state.width, app_state.height);
   vk_swapchain_builder_set_image_count(&builder, image_count);
+  vk_swapchain_builder_set_present_mode(&builder, VK_PRESENT_MODE_FIFO_KHR);
+  vk_swapchain_builder_set_clipped(&builder, true);
+  vk_swapchain_builder_set_image_usage(
+      &builder,
+      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+  );
+  vk_swapchain_builder_set_image_array_layers(&builder, 1);
+  vk_swapchain_builder_set_old_swapchain(&builder, VK_NULL_HANDLE);
+  vk_swapchain_builder_set_pre_transform(
+      &builder,
+      VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR
+  );
+  vk_swapchain_builder_set_composite_alpha(
+      &builder,
+      VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+  );
   app_state.swapchain = vk_swapchain_create(
       &app_state.device,
       &app_state.surface,
       &builder
   );
+  if (app_state.same_queue_families)
+    vk_swapchain_builder_add_queue_family_index(
+        &builder,
+        app_state.physical_device_info.queue_families.present_index
+    );
+  else {
+    vk_swapchain_builder_add_queue_family_index(
+        &builder,
+        app_state.physical_device_info.queue_families.present_index
+    );
+    vk_swapchain_builder_add_queue_family_index(
+        &builder,
+        app_state.physical_device_info.queue_families.graphics_index
+    );
+  }
   log_msg(LOG_LEVEL_INFO, "Swapchain image count: %d", app_state.swapchain.image_count);
   log_msg(LOG_LEVEL_SUCCESS, "Created Vulkan swapchain");
 }
